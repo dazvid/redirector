@@ -1,0 +1,14 @@
+# Real domain: Caddy automatically obtains and renews a trusted Let's
+# Encrypt certificate for this hostname (no `tls internal` — that's only
+# for Caddyfile's self-signed local/internal setup). Automatic HTTPS also
+# sets up the HTTP->HTTPS redirect on :80 for this site, so no separate
+# block is needed for that.
+#
+# Used via docker-compose.prod.yml, which mounts this file instead of the
+# default Caddyfile. If you fork this for your own domain, replace the
+# hostname below.
+www.dazvid.net {
+	encode gzip
+
+	reverse_proxy app:3000
+}

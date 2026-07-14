@@ -36,7 +36,11 @@ docker compose --env-file .env.docker up --build
 - **db**: Postgres 16, persisted in the `pgdata` volume. Not exposed to the host by default — only the `app` container can reach it. Add `-f docker-compose.dev.yml` (see Quick Start above) to publish `localhost:5432` for local `npm run dev` against the same database.
 - Generate `AUTH_SECRET` with `openssl rand -base64 32`, and `ADMIN_PASSWORD_HASH` with `node -e "console.log(require('bcryptjs').hashSync('your-password', 12))"` — then double every `$` in the hash to `$$` in `.env.docker` (Compose interpolates `$` in env files, which otherwise truncates the hash).
 - Requires Docker Compose v2.20+ (for `depends_on.condition: service_completed_successfully`).
-- For a real domain instead of self-signed local TLS, point DNS at the host and replace `Caddyfile`'s `:443 { tls internal ... }` block with `yourdomain.com { reverse_proxy app:3000 }` — Caddy handles Let's Encrypt automatically.
+- **Real domain + trusted TLS**: point DNS at the host, then bring the stack up with the prod override instead of the default self-signed setup:
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.docker up --build -d
+  ```
+  This swaps in `Caddyfile.production` (mounted in place of `Caddyfile` — see `docker-compose.prod.yml`), which has no `tls internal` directive, so Caddy automatically obtains and renews a real Let's Encrypt certificate for the hostname configured there. Edit `Caddyfile.production` to use your own domain if you fork this.
 
 ## REST API
 

@@ -1,0 +1,10 @@
+# Opt-in override for a real-domain deployment with trusted Let's Encrypt
+# TLS, instead of the default self-signed local setup. Not loaded by
+# default — pass both files explicitly:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.docker up --build -d
+services:
+  proxy:
+    volumes:
+      - ./Caddyfile.production:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
