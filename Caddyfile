@@ -1,0 +1,20 @@
+# Local/internal TLS: Caddy issues its own self-signed cert (its internal
+# CA) since there's no public domain for Let's Encrypt. Browsers will warn
+# about the cert being untrusted — that's expected for local use. Trust
+# Caddy's root CA (see README) to remove the warning.
+#
+# Explicit hostnames (not a bare `:443`) are required here — Caddy needs a
+# name to bind the internal cert's SNI to, matching what the browser sends.
+# Add your own hostname/IP to this list if you access the app another way.
+localhost:443, 127.0.0.1:443 {
+	tls internal
+
+	encode gzip
+
+	reverse_proxy app:3000
+}
+
+# Redirect any plain HTTP to HTTPS.
+:80 {
+	redir https://{host}{uri} permanent
+}

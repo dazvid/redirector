@@ -1,0 +1,23 @@
+node_modules/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.docker
+prisma/dev.db
+prisma/dev.db-journal
+coverage/
+
+# OS / editor
+.DS_Store
+**/.DS_Store
+
+# Personal Claude Code settings (not shared project config)
+.claude/settings.local.json
+
+# TLS material — Caddy manages its own certs in a docker volume, never in-tree,
+# but this guards against ever accidentally committing one.
+*.pem
+*.key
+*.crt
+*.cert
