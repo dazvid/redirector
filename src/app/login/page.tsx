@@ -5,10 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
+/**
+ * Only allow same-origin, path-only callbacks. Anything else — an absolute
+ * URL (`https://evil.example`), a scheme-relative one (`//evil.example`), or
+ * a back-slash trick (`/\evil.example`) — would let a crafted
+ * `?callbackUrl=` phish a freshly-authenticated user off to another site, so
+ * fall back to /admin instead.
+ */
+function safeCallbackUrl(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return "/admin";
+  }
+  return raw;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

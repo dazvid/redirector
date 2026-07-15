@@ -74,4 +74,19 @@ describe("extractPreviewImageUrl", () => {
       "https://example.com/favicon.png"
     );
   });
+
+  it("rejects a javascript: image URL", () => {
+    const html = `<meta property="og:image" content="javascript:alert(1)">`;
+    expect(extractPreviewImageUrl(html, "https://example.com")).toBeNull();
+  });
+
+  it("skips a non-http(s) og:image and falls back to a real favicon", () => {
+    const html = `
+      <meta property="og:image" content="javascript:alert(1)">
+      <link rel="icon" href="/favicon.png">
+    `;
+    expect(extractPreviewImageUrl(html, "https://example.com")).toBe(
+      "https://example.com/favicon.png"
+    );
+  });
 });

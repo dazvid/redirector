@@ -6,6 +6,16 @@ import type { ZodError } from "zod";
 
 const BCRYPT_COST = 12;
 
+/**
+ * A real cost-12 hash of a throwaway string. When authenticate() is called
+ * for a username that doesn't exist, we still run bcrypt.compare against
+ * this so the "no such user" path takes about as long as the "wrong
+ * password" path — otherwise the timing difference leaks which usernames
+ * exist.
+ */
+const DUMMY_PASSWORD_HASH =
+  "$2a$12$5KKqqa.4NL6tsoOki6okAeemIc67oOFoBTmYEgmRUdWquIeJC3Eg2";
+
 export type PublicUser = Omit<User, "passwordHash">;
 
 function toValidationError(error: ZodError): UserValidationError {
@@ -50,7 +60,12 @@ export function createUserService(repository: UserRepository) {
       password: string
     ): Promise<PublicUser | null> {
       const user = await repository.findByUsername(username.trim().toLowerCase());
-      if (!user) return null;
+      if (!user) {
+        // Compare against a dummy hash so this path costs the same as a
+        // real (but wrong-password) login — no username-enumeration oracle.
+        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        return null;
+      }
       const valid = await bcrypt.compare(password, user.passwordHash);
       return valid ? withoutPasswordHash(user) : null;
     },
