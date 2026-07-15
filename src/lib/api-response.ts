@@ -59,3 +59,14 @@ function errorJson(
     { status }
   );
 }
+
+/** 429 with a Retry-After header, for rate-limited endpoints. */
+export function rateLimited(retryAfterSeconds: number): NextResponse {
+  const response = errorJson(
+    429,
+    "RATE_LIMITED",
+    "Too many requests. Please try again later."
+  );
+  response.headers.set("Retry-After", String(retryAfterSeconds));
+  return response;
+}

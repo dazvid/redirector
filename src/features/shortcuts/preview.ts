@@ -1,4 +1,4 @@
-import { fetchPageHead } from "@/lib/ssrf-safe-fetch";
+import { fetchPageHead, urlResolvesToPublicHost } from "@/lib/ssrf-safe-fetch";
 import type { Shortcut, ShortcutRepository } from "@/features/shortcuts/repository";
 
 const META_PATTERNS: RegExp[] = [
@@ -16,13 +16,15 @@ const ICON_PATTERNS: RegExp[] = [
 function resolveAgainst(candidate: string, baseUrl: string): string | null {
   try {
     const resolved = new URL(candidate, baseUrl);
-    // Reject data: URIs — some sites use `href="data:,"` (an empty data
-    // URI) as an explicit "no favicon" signal. It's not a network image,
-    // so <img> may never fire load or error on it, wedging the client's
-    // onError fallback chain. Treat it the same as "nothing found" so
-    // extraction moves on to the next candidate (or the caller's own
-    // favicon.ico guess) instead of storing something unusable.
-    if (resolved.protocol === "data:") return null;
+    // Only http(s) images are storable. This drops data: URIs (some sites
+    // use `href="data:,"` as a "no favicon" signal, which wedges the
+    // client's <img> onError fallback chain) but also, and more
+    // importantly, javascript:/blob:/file: and any other scheme an
+    // attacker-controlled page might advertise via og:image — the value is
+    // later emitted straight into an <img src> in the public directory.
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
+      return null;
+    }
     return resolved.toString();
   } catch {
     return null;
@@ -63,7 +65,13 @@ export function createPreviewRefresher(repository: ShortcutRepository) {
     let imageUrl: string | null = null;
     try {
       const html = await fetchPageHead(shortcut.url);
-      imageUrl = extractPreviewImageUrl(html, shortcut.url);
+      const candidate = extractPreviewImageUrl(html, shortcut.url);
+      // Don't persist an image URL that points at an internal host — it
+      // would be rendered in every directory visitor's <img>, turning their
+      // browser into a probe against the private network.
+      if (candidate && (await urlResolvesToPublicHost(candidate))) {
+        imageUrl = candidate;
+      }
     } catch {
       imageUrl = null;
     }

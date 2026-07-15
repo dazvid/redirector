@@ -1,6 +1,12 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { userService } from "@/features/users";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+
+// Throttle credential checks per IP to blunt brute-force / credential
+// stuffing. A rejected attempt surfaces as an ordinary sign-in failure.
+const LOGIN_LIMIT = 10;
+const LOGIN_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * The fields our Credentials provider puts on the JWT/session. Auth.js's
@@ -40,7 +46,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         username: { label: "Username" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
+        if (request instanceof Request) {
+          const limit = rateLimit(
+            `login:${clientIp(request)}`,
+            LOGIN_LIMIT,
+            LOGIN_WINDOW_MS
+          );
+          if (!limit.allowed) return null;
+        }
+
         const username = String(credentials?.username ?? "");
         const password = String(credentials?.password ?? "");
         if (!username || !password) return null;
