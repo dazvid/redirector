@@ -39,6 +39,8 @@ export function createFakeShortcutRepository(
       userId,
       createdAt: now,
       updatedAt: now,
+      previewImageUrl: null,
+      previewFetchedAt: null,
     };
   }
 
@@ -61,12 +63,13 @@ export function createFakeShortcutRepository(
         .map(withOwner);
     },
     async findByKeyword(keyword) {
-      return rows.find((row) => row.keyword === keyword) ?? null;
+      const row = rows.find((candidate) => candidate.keyword === keyword);
+      return row ? { ...row } : null;
     },
     async create(data) {
       const row = makeRow(data);
       rows.push(row);
-      return row;
+      return { ...row };
     },
     async update(id, data) {
       const row = rows.find((candidate) => candidate.id === id);
@@ -76,7 +79,11 @@ export function createFakeShortcutRepository(
       if (data.category !== undefined) row.category = data.category;
       if (data.visibility !== undefined) row.visibility = data.visibility;
       row.updatedAt = new Date();
-      return row;
+      // Return a snapshot, not the live row — real Prisma queries never
+      // hand back a reference that later mutates out from under the
+      // caller, and code (correctly) relies on that, e.g. comparing a
+      // previously-fetched `current.url` against a fresh `updated.url`.
+      return { ...row };
     },
     async deleteById(id) {
       const index = rows.findIndex((candidate) => candidate.id === id);
@@ -87,6 +94,12 @@ export function createFakeShortcutRepository(
       const row = rows.find((candidate) => candidate.id === id);
       if (!row) throw new Error(`No row with id ${id}`);
       row.clickCount += 1;
+    },
+    async setPreviewImage(id, previewImageUrl) {
+      const row = rows.find((candidate) => candidate.id === id);
+      if (!row) throw new Error(`No row with id ${id}`);
+      row.previewImageUrl = previewImageUrl;
+      row.previewFetchedAt = new Date();
     },
   };
 }

@@ -33,5 +33,13 @@ model Shortcut {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
+  /// Resolved og:image/twitter:image (or favicon) URL, fetched server-side
+  /// on create/URL-change. Null if not yet fetched or none was found.
+  previewImageUrl String?
+  /// When the preview was last (attempted to be) fetched — lets us tell
+  /// "never tried" apart from "tried, found nothing" without refetching
+  /// on every read.
+  previewFetchedAt DateTime?
+
   @@index([userId])
 }

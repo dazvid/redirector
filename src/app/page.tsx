@@ -54,6 +54,7 @@ export default async function HomePage({
             visibility: s.visibility,
             ownerUsername: s.ownerUsername,
             isMine: s.isMine,
+            previewImageUrl: s.previewImageUrl,
           }))}
         />
       )}

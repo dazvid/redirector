@@ -12,6 +12,8 @@ export interface Shortcut {
   userId: string;
   createdAt: Date;
   updatedAt: Date;
+  previewImageUrl: string | null;
+  previewFetchedAt: Date | null;
 }
 
 export interface ShortcutWithOwner extends Shortcut {
@@ -48,6 +50,8 @@ export interface ShortcutRepository {
   deleteById(id: string): Promise<void>;
   /** Fire-and-forget usage counter, bumped by the redirect route. */
   incrementClicks(id: string): Promise<void>;
+  /** System-derived write (see features/shortcuts/preview.ts) — not part of the user-facing update() path. */
+  setPreviewImage(id: string, previewImageUrl: string | null): Promise<void>;
 }
 
 export function createPrismaShortcutRepository(
@@ -84,6 +88,12 @@ export function createPrismaShortcutRepository(
       await prisma.shortcut.update({
         where: { id },
         data: { clickCount: { increment: 1 } },
+      });
+    },
+    async setPreviewImage(id, previewImageUrl) {
+      await prisma.shortcut.update({
+        where: { id },
+        data: { previewImageUrl, previewFetchedAt: new Date() },
       });
     },
   };

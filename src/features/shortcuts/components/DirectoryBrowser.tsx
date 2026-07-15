@@ -12,6 +12,40 @@ interface DirectoryShortcut {
   visibility: "PUBLIC" | "PERSONAL";
   ownerUsername: string;
   isMine: boolean;
+  previewImageUrl: string | null;
+}
+
+/**
+ * Tries the fetched og:image/favicon first, then guesses `${origin}/favicon.ico`,
+ * then gives up and renders nothing — a broken/blocked image never leaves
+ * a broken-image icon in the card.
+ */
+function Thumbnail({ previewImageUrl, pageUrl }: { previewImageUrl: string | null; pageUrl: string }) {
+  const candidates = useMemo(() => {
+    const list: string[] = [];
+    if (previewImageUrl) list.push(previewImageUrl);
+    try {
+      list.push(new URL("/favicon.ico", pageUrl).toString());
+    } catch {
+      /* pageUrl didn't parse — no favicon guess possible */
+    }
+    return list;
+  }, [previewImageUrl, pageUrl]);
+
+  const [index, setIndex] = useState(0);
+
+  if (index >= candidates.length) return null;
+
+  return (
+    <div className="thumb">
+      <img
+        key={candidates[index]}
+        src={candidates[index]}
+        alt=""
+        onError={() => setIndex((i) => i + 1)}
+      />
+    </div>
+  );
 }
 
 const UNCATEGORIZED = "Other";
@@ -138,6 +172,7 @@ export function DirectoryBrowser({
               <div className="dir-grid">
                 {g.items.map((s) => (
                   <article key={s.id} className="card elev-sm link-card">
+                    <Thumbnail previewImageUrl={s.previewImageUrl} pageUrl={s.url} />
                     <div className="link-card-top">
                       <span className="kw">go/{s.keyword}</span>
                       <span className="opens">{formatCount(s.clickCount)} opens</span>

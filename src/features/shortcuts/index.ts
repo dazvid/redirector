@@ -6,7 +6,10 @@
 import { prisma } from "@/lib/db";
 import { createPrismaShortcutRepository } from "@/features/shortcuts/repository";
 import { createShortcutService } from "@/features/shortcuts/service";
+import { createPreviewRefresher } from "@/features/shortcuts/preview";
 
-export const shortcutService = createShortcutService(
-  createPrismaShortcutRepository(prisma)
-);
+const shortcutRepository = createPrismaShortcutRepository(prisma);
+
+export const shortcutService = createShortcutService(shortcutRepository, {
+  refreshPreview: createPreviewRefresher(shortcutRepository),
+});

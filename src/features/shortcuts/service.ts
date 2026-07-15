@@ -20,6 +20,16 @@ export interface Viewer {
   isAdmin: boolean;
 }
 
+export interface ShortcutServiceDeps {
+  /**
+   * Fire-and-forget preview-image refresh, called after create and after
+   * an update that changes the URL. Injected (rather than imported
+   * directly) so unit tests never make a real network call — see
+   * features/shortcuts/index.ts for the production wiring.
+   */
+  refreshPreview?: (shortcut: Pick<Shortcut, "id" | "url">) => Promise<void>;
+}
+
 export interface ShortcutListItem extends ShortcutWithOwner {
   /** True when the viewer who called listShortcuts owns this row. */
   isMine: boolean;
@@ -43,7 +53,10 @@ function assertCanManage(shortcut: Shortcut, actor: Viewer): void {
  * validated and normalized here, regardless of whether it arrived via
  * the REST API, a server component, or a future CLI.
  */
-export function createShortcutService(repository: ShortcutRepository) {
+export function createShortcutService(
+  repository: ShortcutRepository,
+  deps: ShortcutServiceDeps = {}
+) {
   return {
     /**
      * Admins see every shortcut; signed-in viewers see public shortcuts
@@ -90,7 +103,9 @@ export function createShortcutService(repository: ShortcutRepository) {
       const existing = await repository.findByKeyword(parsed.data.keyword);
       if (existing) throw new DuplicateKeywordError(parsed.data.keyword);
 
-      return repository.create({ ...parsed.data, userId: owner.id });
+      const created = await repository.create({ ...parsed.data, userId: owner.id });
+      void deps.refreshPreview?.(created).catch(() => {});
+      return created;
     },
 
     async updateShortcut(
@@ -109,7 +124,11 @@ export function createShortcutService(repository: ShortcutRepository) {
         if (collision) throw new DuplicateKeywordError(parsed.data.keyword);
       }
 
-      return repository.update(current.id, parsed.data);
+      const updated = await repository.update(current.id, parsed.data);
+      if (parsed.data.url && parsed.data.url !== current.url) {
+        void deps.refreshPreview?.(updated).catch(() => {});
+      }
+      return updated;
     },
 
     async deleteShortcut(rawKeyword: string, actor: Viewer): Promise<void> {

@@ -247,3 +247,54 @@ describe("deleteShortcut", () => {
     );
   });
 });
+
+describe("refreshPreview wiring", () => {
+  function makeServiceWithRefresher(
+    seed: Parameters<typeof createFakeShortcutRepository>[0] = []
+  ) {
+    const repository = createFakeShortcutRepository(seed);
+    const calls: Array<{ id: string; url: string }> = [];
+    const refreshPreview = async (shortcut: { id: string; url: string }) => {
+      calls.push({ id: shortcut.id, url: shortcut.url });
+    };
+    const service = createShortcutService(repository, { refreshPreview });
+    return { service, calls };
+  }
+
+  it("triggers a refresh after creating a shortcut", async () => {
+    const { service, calls } = makeServiceWithRefresher();
+    const created = await service.createShortcut(
+      { keyword: "youtube", url: "https://www.youtube.com" },
+      OWNER
+    );
+    expect(calls).toEqual([{ id: created.id, url: created.url }]);
+  });
+
+  it("triggers a refresh when an update changes the URL", async () => {
+    const { service, calls } = makeServiceWithRefresher([
+      { keyword: "youtube", url: "https://old.example", userId: OWNER.id },
+    ]);
+    await service.updateShortcut("youtube", { url: "https://new.example" }, OWNER);
+    expect(calls).toEqual([{ id: expect.any(String), url: "https://new.example" }]);
+  });
+
+  it("does not trigger a refresh when an update leaves the URL unchanged", async () => {
+    const { service, calls } = makeServiceWithRefresher([
+      { keyword: "youtube", url: "https://www.youtube.com", userId: OWNER.id },
+    ]);
+    await service.updateShortcut("youtube", { keyword: "yt" }, OWNER);
+    expect(calls).toEqual([]);
+  });
+
+  it("does not let a rejecting refresher break createShortcut", async () => {
+    const repository = createFakeShortcutRepository();
+    const service = createShortcutService(repository, {
+      refreshPreview: async () => {
+        throw new Error("network is down");
+      },
+    });
+    await expect(
+      service.createShortcut({ keyword: "youtube", url: "https://www.youtube.com" }, OWNER)
+    ).resolves.toMatchObject({ keyword: "youtube" });
+  });
+});
