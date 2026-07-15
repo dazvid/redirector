@@ -53,6 +53,7 @@ export default async function RootLayout({
               </span>
             </Link>
             <nav className="site-nav">
+              <Link href="/setup">Setup</Link>
               {viewer ? (
                 <>
                   <Link href="/admin">Manage</Link>

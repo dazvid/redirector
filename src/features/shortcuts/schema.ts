@@ -11,6 +11,7 @@ export const RESERVED_KEYWORDS: readonly string[] = [
   "login",
   "logout",
   "signup",
+  "setup",
   "favicon.ico",
   "robots.txt",
   "sitemap.xml",

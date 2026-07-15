@@ -101,6 +101,20 @@ h1 {
 }
 h4 {
   font-size: 20px;
+  margin-top: 24px;
+}
+
+ol,
+ul {
+  padding-left: 1.3em;
+  margin: 0 0 20px;
+  line-height: 1.7;
+}
+li {
+  margin-bottom: 6px;
+}
+li:last-child {
+  margin-bottom: 0;
 }
 
 a {
