@@ -29,16 +29,6 @@ describe("createShortcut", () => {
     expect(created.keyword).toBe("youtube");
     expect(created.url).toBe("https://www.youtube.com");
     expect(created.userId).toBe(OWNER.id);
-    expect(created.visibility).toBe("PUBLIC");
-  });
-
-  it("respects an explicit PERSONAL visibility", async () => {
-    const { service } = makeService();
-    const created = await service.createShortcut(
-      { keyword: "notes", url: "https://notes.example", visibility: "PERSONAL" },
-      OWNER
-    );
-    expect(created.visibility).toBe("PERSONAL");
   });
 
   it("rejects duplicates with DuplicateKeywordError", async () => {
@@ -66,40 +56,33 @@ describe("createShortcut", () => {
 
 describe("listShortcuts", () => {
   const seed = [
-    { keyword: "public-mine", url: "https://a.example", userId: OWNER.id, visibility: "PUBLIC" as const },
-    { keyword: "personal-mine", url: "https://b.example", userId: OWNER.id, visibility: "PERSONAL" as const },
-    { keyword: "public-theirs", url: "https://c.example", userId: OTHER_USER.id, visibility: "PUBLIC" as const },
-    { keyword: "personal-theirs", url: "https://d.example", userId: OTHER_USER.id, visibility: "PERSONAL" as const },
+    { keyword: "mine", url: "https://a.example", userId: OWNER.id },
+    { keyword: "theirs", url: "https://b.example", userId: OTHER_USER.id },
   ];
 
-  it("shows an anonymous viewer only public shortcuts", async () => {
+  it("shows an anonymous viewer every shortcut", async () => {
     const { service } = makeService(seed);
     const keywords = (await service.listShortcuts(null)).map((s) => s.keyword);
-    expect(keywords.sort()).toEqual(["public-mine", "public-theirs"]);
+    expect(keywords.sort()).toEqual(["mine", "theirs"]);
   });
 
-  it("shows a signed-in viewer public shortcuts plus their own personal ones", async () => {
+  it("shows a signed-in viewer every shortcut, not just their own", async () => {
     const { service } = makeService(seed);
     const keywords = (await service.listShortcuts(OWNER)).map((s) => s.keyword);
-    expect(keywords.sort()).toEqual(["personal-mine", "public-mine", "public-theirs"]);
+    expect(keywords.sort()).toEqual(["mine", "theirs"]);
   });
 
-  it("shows an admin every shortcut regardless of owner or visibility", async () => {
+  it("shows an admin every shortcut too", async () => {
     const { service } = makeService(seed);
     const keywords = (await service.listShortcuts(ADMIN)).map((s) => s.keyword);
-    expect(keywords.sort()).toEqual([
-      "personal-mine",
-      "personal-theirs",
-      "public-mine",
-      "public-theirs",
-    ]);
+    expect(keywords.sort()).toEqual(["mine", "theirs"]);
   });
 
   it("flags isMine/canManage correctly per viewer", async () => {
     const { service } = makeService(seed);
     const asOwner = await service.listShortcuts(OWNER);
-    const mine = asOwner.find((s) => s.keyword === "public-mine");
-    const theirs = asOwner.find((s) => s.keyword === "public-theirs");
+    const mine = asOwner.find((s) => s.keyword === "mine");
+    const theirs = asOwner.find((s) => s.keyword === "theirs");
     expect(mine?.isMine).toBe(true);
     expect(mine?.canManage).toBe(true);
     expect(theirs?.isMine).toBe(false);
@@ -107,13 +90,16 @@ describe("listShortcuts", () => {
 
     const asAdmin = await service.listShortcuts(ADMIN);
     expect(asAdmin.every((s) => s.canManage)).toBe(true);
+
+    const asAnonymous = await service.listShortcuts(null);
+    expect(asAnonymous.every((s) => !s.isMine && !s.canManage)).toBe(true);
   });
 });
 
 describe("resolveKeyword", () => {
-  it("resolves a known keyword case-insensitively, regardless of visibility", async () => {
+  it("resolves a known keyword case-insensitively", async () => {
     const { service } = makeService([
-      { keyword: "youtube", url: "https://www.youtube.com", visibility: "PERSONAL" as const },
+      { keyword: "youtube", url: "https://www.youtube.com" },
     ]);
     const shortcut = await service.resolveKeyword("YouTube");
     expect(shortcut?.url).toBe("https://www.youtube.com");

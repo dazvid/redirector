@@ -7,8 +7,8 @@ import { getViewer } from "@/lib/auth";
  * Public directory of shortcuts (the "Directory" direction). Also serves
  * as the landing spot for unknown keywords (?missing=...), offering to
  * create them. Data is fetched here (server) and handed to the client
- * DirectoryBrowser for instant search / filtering. Signed-in viewers see
- * public shortcuts plus their own personal ones; admins see everything.
+ * DirectoryBrowser for instant search / filtering. Every shortcut is
+ * listed for every viewer; only edit/delete access varies by ownership.
  */
 export default async function HomePage({
   searchParams,
@@ -51,7 +51,6 @@ export default async function HomePage({
             url: s.url,
             category: s.category,
             clickCount: s.clickCount,
-            visibility: s.visibility,
             ownerUsername: s.ownerUsername,
             isMine: s.isMine,
             previewImageUrl: s.previewImageUrl,

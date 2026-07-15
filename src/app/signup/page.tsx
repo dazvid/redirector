@@ -74,8 +74,7 @@ export default function SignupPage() {
       <span className="brandmark brandmark-lg">go</span>
       <h1 className="login-title">Create an account</h1>
       <p className="lede">
-        Any account can create and manage its own shortcuts. Mark one
-        “Personal” to keep it out of everyone else&rsquo;s list.
+        Any account can create and manage its own shortcuts.
       </p>
       <form className="stack" onSubmit={handleSubmit}>
         <div className="field">

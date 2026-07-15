@@ -14,7 +14,6 @@ interface ShortcutRow {
   url: string;
   category: string | null;
   clickCount: number;
-  visibility: "PUBLIC" | "PERSONAL";
   ownerUsername: string;
   isMine: boolean;
   canManage: boolean;
@@ -64,8 +63,8 @@ function formatCount(n: number): string {
 /**
  * CRUD console for shortcuts (the "Console" direction). Talks to the
  * REST API (not directly to the database) so the interface exercises the
- * same code paths as any external API consumer. The list already reflects
- * what the signed-in viewer may see and manage (see shortcutService.listShortcuts).
+ * same code paths as any external API consumer. Every shortcut is listed;
+ * `canManage` (owner or admin) controls whether edit/delete show for a row.
  */
 export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) {
   const [shortcuts, setShortcuts] = useState<ShortcutRow[]>([]);
@@ -83,7 +82,6 @@ export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) 
   const [newKeyword, setNewKeyword] = useState(initialKeyword);
   const [newUrl, setNewUrl] = useState("");
   const [newCategory, setNewCategory] = useState("");
-  const [newVisibility, setNewVisibility] = useState<"PUBLIC" | "PERSONAL">("PUBLIC");
   const [creating, setCreating] = useState(false);
 
   // Inline edit
@@ -161,7 +159,6 @@ export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) 
         keyword: newKeyword,
         url: newUrl,
         category: newCategory,
-        visibility: newVisibility,
       }),
     });
 
@@ -174,7 +171,6 @@ export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) 
     setNewKeyword("");
     setNewUrl("");
     setNewCategory("");
-    setNewVisibility("PUBLIC");
     setAddOpen(false);
     await refresh();
   }
@@ -290,20 +286,6 @@ export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) 
                 onChange={(e) => setNewCategory(e.target.value)}
               />
             </div>
-            <div className="field cat-field">
-              <label htmlFor="add-vis">Visibility</label>
-              <select
-                id="add-vis"
-                className="input"
-                value={newVisibility}
-                onChange={(e) =>
-                  setNewVisibility(e.target.value as "PUBLIC" | "PERSONAL")
-                }
-              >
-                <option value="PUBLIC">Public</option>
-                <option value="PERSONAL">Personal</option>
-              </select>
-            </div>
             <div className="add-actions">
               <button type="submit" className="btn btn-primary" disabled={creating}>
                 {creating ? "Saving…" : "Save"}
@@ -317,10 +299,6 @@ export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) 
               </button>
             </div>
           </div>
-          <p className="lede" style={{ margin: "10px 0 0" }}>
-            Personal shortcuts stay out of everyone else&rsquo;s directory and
-            console — the go/keyword redirect still works for anyone.
-          </p>
           {error ? <p className="error-text">{error}</p> : null}
         </form>
       ) : null}
@@ -433,13 +411,10 @@ export function ShortcutManager({ initialKeyword }: { initialKeyword: string }) 
               <div key={s.id} className="data-row">
                 <span className="kw mono">go/{s.keyword}</span>
                 <span className="dest mono trunc">{hostOf(s.url)}</span>
-                <span style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                <span>
                   <span className="tag tag-neutral">
                     {s.category ?? UNCATEGORIZED}
                   </span>
-                  {s.visibility === "PERSONAL" ? (
-                    <span className="tag tag-neutral">Personal</span>
-                  ) : null}
                 </span>
                 <span className="dest mono trunc">
                   {s.isMine ? "you" : s.ownerUsername}

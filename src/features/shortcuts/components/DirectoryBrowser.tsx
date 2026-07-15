@@ -9,7 +9,6 @@ interface DirectoryShortcut {
   url: string;
   category: string | null;
   clickCount: number;
-  visibility: "PUBLIC" | "PERSONAL";
   ownerUsername: string;
   isMine: boolean;
   previewImageUrl: string | null;
@@ -178,15 +177,8 @@ export function DirectoryBrowser({
                       <span className="opens">{formatCount(s.clickCount)} opens</span>
                     </div>
                     <div className="dest mono trunc">{hostOf(s.url)}</div>
-                    {s.visibility === "PERSONAL" || !s.isMine ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        {s.visibility === "PERSONAL" ? (
-                          <span className="tag tag-neutral">Personal</span>
-                        ) : null}
-                        {!s.isMine ? (
-                          <span className="opens">by {s.ownerUsername}</span>
-                        ) : null}
-                      </div>
+                    {!s.isMine ? (
+                      <span className="opens">by {s.ownerUsername}</span>
                     ) : null}
                     <div className="card-actions">
                       <button

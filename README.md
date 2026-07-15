@@ -1,6 +1,6 @@
 # go/links
 
-Keyword shortcuts that redirect to saved URLs. Visit `/{keyword}` (e.g. `/youtube`) to be redirected to its saved URL. Anyone can sign up; each shortcut belongs to whoever created it, and is either **Public** (listed for everyone) or **Personal** (unlisted — the redirect still works for anyone, it's just left out of other users' directory/console). Shortcuts are managed through a REST API and an authenticated admin console.
+Keyword shortcuts that redirect to saved URLs. Visit `/{keyword}` (e.g. `/youtube`) to be redirected to its saved URL. Anyone can sign up; every shortcut is listed for everyone in the directory, but each one belongs to whoever created it — only the owner or an admin can edit or delete it. Shortcuts are managed through a REST API and an authenticated admin console.
 
 ## Quick start
 
@@ -48,11 +48,11 @@ All responses use a consistent envelope: `{ "data": ... }` on success, `{ "error
 
 | Method | Route | Auth | Behavior |
 |---|---|---|---|
-| GET | `/{keyword}` | public | 302 redirect to the saved URL (works for Personal shortcuts too) |
-| GET | `/api/shortcuts` | public, viewer-aware | List shortcuts the caller may see: public + own personal if signed in, everything if admin |
+| GET | `/{keyword}` | public | 302 redirect to the saved URL |
+| GET | `/api/shortcuts` | public | List every shortcut (`isMine`/`canManage` reflect the caller, if signed in) |
 | GET | `/api/shortcuts/{keyword}` | public | Fetch one shortcut |
 | POST | `/api/shortcuts` | required | Create, owned by the caller (`409` on duplicate keyword) |
-| PUT | `/api/shortcuts/{keyword}` | required, owner or admin | Update keyword/URL/category/visibility (`403` otherwise) |
+| PUT | `/api/shortcuts/{keyword}` | required, owner or admin | Update keyword/URL/category (`403` otherwise) |
 | DELETE | `/api/shortcuts/{keyword}` | required, owner or admin | Delete (`403` otherwise) |
 | POST | `/api/auth/signup` | public | Create a regular (non-admin) account (`409` on duplicate username) |
 

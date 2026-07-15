@@ -16,7 +16,7 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 /**
- * PUT /api/shortcuts/{keyword} — update keyword/URL/category/visibility.
+ * PUT /api/shortcuts/{keyword} — update keyword/URL/category.
  * Requires auth; the service enforces owner-or-admin (403 otherwise).
  */
 export async function PUT(request: Request, context: RouteContext) {

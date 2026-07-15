@@ -59,13 +59,11 @@ export function createShortcutService(
 ) {
   return {
     /**
-     * Admins see every shortcut; signed-in viewers see public shortcuts
-     * plus their own; anonymous viewers (pass null) see public only.
+     * Every shortcut is listed for every viewer (signed in or not) —
+     * `isMine`/`canManage` are the only things that vary by viewer.
      */
     async listShortcuts(viewer: Viewer | null): Promise<ShortcutListItem[]> {
-      const rows = viewer?.isAdmin
-        ? await repository.list({ includeAll: true })
-        : await repository.list({ viewerId: viewer?.id });
+      const rows = await repository.list();
 
       return rows.map((row) => {
         const isMine = viewer?.id === row.userId;
@@ -75,8 +73,7 @@ export function createShortcutService(
 
     /**
      * Resolves a keyword to its shortcut, or null (used by the redirect
-     * route). Not visibility-filtered — PERSONAL shortcuts are unlisted,
-     * not access-controlled, so the redirect works for anyone.
+     * route).
      */
     async resolveKeyword(rawKeyword: string): Promise<Shortcut | null> {
       const keyword = rawKeyword.trim().toLowerCase();

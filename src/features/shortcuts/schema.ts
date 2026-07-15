@@ -62,19 +62,10 @@ export const categorySchema = z
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
-/**
- * PUBLIC shortcuts appear in the directory/console for everyone; PERSONAL
- * ones are left out of other users' listings. Either way, the /{keyword}
- * redirect itself is not access-controlled — visibility only affects
- * whether a shortcut is listed, not whether it resolves.
- */
-export const visibilitySchema = z.enum(["PUBLIC", "PERSONAL"]).default("PUBLIC");
-
 export const createShortcutSchema = z.object({
   keyword: keywordSchema,
   url: urlSchema,
   category: categorySchema,
-  visibility: visibilitySchema,
 });
 
 export const updateShortcutSchema = z
@@ -82,15 +73,13 @@ export const updateShortcutSchema = z
     keyword: keywordSchema.optional(),
     url: urlSchema.optional(),
     category: categorySchema,
-    visibility: z.enum(["PUBLIC", "PERSONAL"]).optional(),
   })
   .refine(
     (data) =>
       data.keyword !== undefined ||
       data.url !== undefined ||
-      data.category !== undefined ||
-      data.visibility !== undefined,
-    { message: "Provide a keyword, URL, category, or visibility to update" }
+      data.category !== undefined,
+    { message: "Provide a keyword, URL, or category to update" }
   );
 
 export type CreateShortcutInput = z.infer<typeof createShortcutSchema>;
